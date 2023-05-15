@@ -62,9 +62,9 @@ end
 
 
 % Determines whether to use 1 or 2 input profiles.
-if P.isSecondInput % adds phase shifted second input profile.
+if P.isSecondInput == 1 % adds phase shifted second input profile.
     DT_input = @(i,T_t0) P.input(P.dt*i,T_t0) + P.input(P.dt*i, T_t0+P.inputShift);
-elseif ~P.isSecondInput % single input profile
+elseif ~P.isSecondInput == 0 % single input profile
     DT_input = @(i,T_t0) P.input(P.dt*i,T_t0);
 else
     error("Invalid P.isSecondInput. Only 0 and 1 are accepted.  ")
@@ -156,7 +156,7 @@ for j = 1:length(P.kickIndices)
                 i = P.numSteps; % Stops simulation 
             end
 
-            I = DT_input(i,P.t0);
+            I = input_sim(i);
             
 %             % I could put switch-case here to allow for more models... But
 %             % I am afraid this would affect run time.

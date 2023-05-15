@@ -6,7 +6,7 @@
 % times) with white noise to get a histogram of spike times with respect to the period of
 % input oscillation. 
 % 4) Measure the dynamical threshold for a given input by adding kicks of 
-% varying amplitude. For a given input (non-spike inducing, I believe), at
+% varying amplitude. For a given input that is non-spike inducing, at
 % each time point over one input period I will
 % apply increasing kick amplitudes. After a kick is applied, I run the
 % simulation out for at least one (maybe more) period to see if a spike
@@ -170,7 +170,7 @@ P.V0 = -63.6; % voltage initial condition in mV (chosen near Meng VU fixed point
 P.U0 = 0.43; % adaptation variable initial condition (chosen near Meng VU fixed point)
 
 % Kicking params
-P.kickDensity = 10; % How many kicks to have per milisecond.
+P.kickDensity = 15; % How many kicks to have per milisecond.
 % KickIndices is a better replacement for kickTimes as the basis of
 % determing when to kick, because converting from kickTimes to indices has
 % rounding errors, but not when converting from indices to times. The
@@ -182,7 +182,7 @@ P.kickIndices = 1 : round((1/P.kickDensity)*(1/P.dt)) : P.numSteps - 0.5/P.dt;
 % Evenly spaced kick times of P.kickDensity density, calculated from
 % P.kickIndices.
 P.kickTimes = P.kickIndices.*P.dt;
-P.kickIncrement = 0.1; % Size to increase kick amplitude each iteration.
+P.kickIncrement = 0.05; % Size to increase kick amplitude each iteration.
 
 
 checkSimSpike(P); % checks that baseline simulation doesn't spike.
@@ -218,51 +218,52 @@ switch P.input_type
 end
 plot(P.tarray, DT.input.*0.25*(max(h.BinCounts)/max(DT.input)),"color",'b')
 plot(P.kickTimes, DT.kickSizes.*(max(h.BinCounts)/max(DT.kickSizes)), "color",'r')
-plot(P.kickTimes, DT.spike_lags.*(max(h.BinCounts)/max(DT.spike_lags)), "color",'g')
+% plot(P.kickTimes, DT.spike_lags.*(max(h.BinCounts)/max(DT.spike_lags)), "color",'g')
 xlabel("Time (ms)")
-legend(["spike counts","I scaled","Dyn Thr scaled","spike lag scaled"])
+% legend(["spike counts","I scaled","Dyn Thr scaled","spike lag scaled"])
 
 
 
-% DT with adjusted spiketime histogram
-% To account for the different spike time lags that occur at different
-% points in the dynamical threshold, I need to subtract the proper spike
-% lag from each spike in the distribution generated with noisy input. To do
-% this, I need to interpolate the spike lag curve with the actual
-% distribution spike times.
-
-% spike lags for all spikes in the distribution
-dist_spikelags = interp1(P.kickTimes, DT.spike_lags, spikes_toplot, 'linear', 'extrap');
-% Subtract the time lags from each spike time
-shifted_spikes_toplot = spikes_toplot - dist_spikelags;
-
-figure;
-hold on;
-plot(P.kickTimes, DT.spike_lags,'color','g')
-scatter(spikes_toplot,dist_spikelags,'MarkerEdgeColor','yellow')
-legend(["Spike lag curve","Interpolation points"])
-title("Checking Interpolation of Noisy Spiketime Distribution")
-xlabel("kick and spike times (ms)")
-ylabel("spike lag time (ms)")
-
-figure;
-hold on;
-
-switch P.input_type
-    case 'tent'
-        h = histogram(shifted_spikes_toplot,...
-            linspace(P.t0, P.simLength, 25+ceil(sqrt(2*length(spikes_toplot)))), "FaceColor","magenta");
-        title(sprintf("Dynamical Threshold \n A = %d, beta = %d", P.A, P.beta))
-    case 'rectsin'
-        h = histogram(shifted_spikes_toplot,...
-            linspace(P.t0, P.simLength, 25+ceil(sqrt(2*length(spikes_toplot)))), "FaceColor","magenta");
-        title(sprintf("Dynamical Threshold, Shifted Spike Histogram \n width = %d, beta = %d", P.sin_width, P.beta))
-end
-plot(P.tarray, DT.input.*0.25*(max(h.BinCounts)/max(DT.input)),"color",'b')
-plot(P.kickTimes, DT.kickSizes.*(max(h.BinCounts)/max(DT.kickSizes)), "color",'r')
-plot(P.kickTimes, DT.spike_lags.*(max(h.BinCounts)/max(DT.spike_lags)), "color",'g')
-xlabel("Time (ms)") 
-legend(["shifted spike counts","I scaled","Dyn Thr scaled","spike lag scaled"])
+% % DT with adjusted spiketime histogram based on spike lag curve
+%
+% % To account for the different spike time lags that occur at different
+% % points in the dynamical threshold, I need to subtract the proper spike
+% % lag from each spike in the distribution generated with noisy input. To do
+% % this, I need to interpolate the spike lag curve with the actual
+% % distribution spike times.
+% 
+% % spike lags for all spikes in the distribution
+% dist_spikelags = interp1(P.kickTimes, DT.spike_lags, spikes_toplot, 'linear', 'extrap');
+% % Subtract the time lags from each spike time
+% shifted_spikes_toplot = spikes_toplot - dist_spikelags;
+% 
+% figure;
+% hold on;
+% plot(P.kickTimes, DT.spike_lags,'color','g')
+% scatter(spikes_toplot,dist_spikelags,'MarkerEdgeColor','yellow')
+% legend(["Spike lag curve","Interpolation points"])
+% title("Checking Interpolation of Noisy Spiketime Distribution")
+% xlabel("kick and spike times (ms)")
+% ylabel("spike lag time (ms)")
+% 
+% figure;
+% hold on;
+% 
+% switch P.input_type
+%     case 'tent'
+%         h = histogram(shifted_spikes_toplot,...
+%             linspace(P.t0, P.simLength, 25+ceil(sqrt(2*length(spikes_toplot)))), "FaceColor","magenta");
+%         title(sprintf("Dynamical Threshold \n A = %d, beta = %d", P.A, P.beta))
+%     case 'rectsin'
+%         h = histogram(shifted_spikes_toplot,...
+%             linspace(P.t0, P.simLength, 25+ceil(sqrt(2*length(spikes_toplot)))), "FaceColor","magenta");
+%         title(sprintf("Dynamical Threshold, Shifted Spike Histogram \n width = %d, beta = %d", P.sin_width, P.beta))
+% end
+% plot(P.tarray, DT.input.*0.25*(max(h.BinCounts)/max(DT.input)),"color",'b')
+% plot(P.kickTimes, DT.kickSizes.*(max(h.BinCounts)/max(DT.kickSizes)), "color",'r')
+% plot(P.kickTimes, DT.spike_lags.*(max(h.BinCounts)/max(DT.spike_lags)), "color",'g')
+% xlabel("Time (ms)") 
+% legend(["shifted spike counts","I scaled","Dyn Thr scaled","spike lag scaled"])
 
 
 
@@ -272,18 +273,18 @@ legend(["shifted spike counts","I scaled","Dyn Thr scaled","spike lag scaled"])
 % Input params
 P.t0 = 1; % start time of input. Make sure this is long enough to allow V and U 
 % to reach steady states before input arrives.
-P.inputShift = 5; % The shift in time between the start of the first input and 
+P.inputShift = 0; % The shift in time between the start of the first input and 
 % the start of the second input in a single period, when there are two
 % inputs being provided. In ms.
 P.isSecondInput = 0; % boolean for second input current.
-P.A = 800; % Slope of the tent input.  
-P.beta = 400; % Height of the tent input peak.
+P.A = 750/2; % Slope of the tent input.  
+P.beta = 750; % Height of the tent input peak.
 P.sigma = 0; % Noise amplitude
-P.sin_width = 1;
+P.sin_width = 4;
 
 % Simulation params struct
 P.model = 'VU tonic';
-P.input_type = 'rectsin';
+P.input_type = 'tent';
 P.numSims = 1; % Number of simulations to run.
 P.numT = 3; % Number of input periods to run per simulation.
 P.dt = 0.001;
@@ -370,7 +371,7 @@ set(plt, "Visible", "on");
 
 % Input params
 P.t0 = 1; 
-P.inputShift = 5; 
+P.inputShift = 0; 
 P.isSecondInput = 1; 
 P.A = 400; 
 P.beta = 400; 
@@ -416,6 +417,8 @@ sigma_range = 0 : 5 : 250; % Define sigma values to use.
 
 counts_mat = zeros(length(sigma_range), length(hist_edges)-1); % Matrix to hold spike count data.
 
+plotFirstSpike_boo = 0; % 1 to only plot/use the first spike per sim in the histograms, 
+% 0 to plot/use all spikes recorded during each simulation.
 
 for i = 1:length(sigma_range)
     
@@ -423,8 +426,6 @@ for i = 1:length(sigma_range)
 
     NS = runNoiseSims(P); % Get the data.
     
-    plotFirstSpike_boo = 1; % 1 to only plot/use the first spike per sim in the histograms, 
-    % 0 to plot/use all spikes recorded during each simulation.
     if plotFirstSpike_boo
         spikes_toplot = NS.first_spikes';
     else
@@ -439,7 +440,53 @@ end
 
 
 
-%% plot
+% plot
+figure;
+hold on;
+[X,Y] = meshgrid(hist_edges(2:end),sigma_range);
+im = imagesc(hist_edges(2:end),sigma_range,counts_mat);
+cb = colorbar;
+cb.Label.String = "Number of Spikes";
+switch P.input_type
+    case 'tent'
+        title(sprintf("Spike Count Image tent input \n A = %d, beta = %d, IS = %d", P.A, P.beta, P.inputShift))
+    case 'rectsin'
+        title(sprintf("Spike Count Image rectsin input \n width = %d, beta = %d, IS = %d", P.sin_width, P.beta, P.inputShift))
+end
+xlabel("Time (ms)")
+ylabel("Sigma")
+axis([min(hist_edges(2:end)),max(hist_edges(2:end)), min(sigma_range),max(sigma_range)]);
+% ax = gca;
+% ax.YTickLabel = linspace(min(sigma_range), max(sigma_range), numel(ax.YTick)+1);
+% ax.XTickLabel = round(linspace(min(hist_edges), max(hist_edges), numel(ax.XTick)+1), 2);
+
+indx_toplot = NS.input_noNoise >= P.t0;
+plot(P.tarray(indx_toplot), NS.input_noNoise(indx_toplot).*(size(counts_mat,1)/max(NS.input_noNoise)), "color", 'k')
+
+% 
+% figure;
+% hold on;
+% plot(sigma_range, sum(counts_mat,2))
+% xlabel("sigma")
+% ylabel("Total Spike Count")
+% title("Total Number of Spikes in Histograms")
+
+%% Plot same heatmap as above but with dynamical threshold trace included for the noiseless case
+
+% Kicking params
+P.kickDensity = 15; % How many kicks to have per milisecond.
+% Evenly spaced kick times of P.kickDensity density. Note kickTimes can't
+% start at 0 because I get an indexing by 0 error later. Also note I don't
+% kick all the way until the end of the simulation because at the very end
+% it requires large kick amplitudes in order to get spikes to occur before
+% the simulation ends.
+P.kickTimes = linspace(P.dt, (P.simLength - 0.5), P.kickDensity*((P.simLength - 0.5) - P.dt));
+P.kickIncrement = 0.05; % Size to increase kick amplitude each iteration.
+
+checkSimSpike(P); % checks that baseline simulation doesn't spike.
+DT = getDynThr(P); % run dynamical threshold simulations.
+
+% Plot
 figure;
 hold on;
 [X,Y] = meshgrid(hist_edges(2:end),sigma_range);
@@ -457,51 +504,7 @@ ylabel("Sigma")
 % axis image;
 % ax = gca;
 % ax.YTickLabel = linspace(min(sigma_range), max(sigma_range), numel(ax.YTick)+1);
-% ax.XTickLabel = round(linspace(min(hist_edges), max(hist_edges), numel(ax.XTick)+1), 2);
-
-plot(P.tarray, NS.input_noNoise.*(size(counts_mat,1)/max(NS.input_noNoise)), "color", 'k')
-
-% 
-% figure;
-% hold on;
-% plot(sigma_range, sum(counts_mat,2))
-% xlabel("sigma")
-% ylabel("Total Spike Count")
-% title("Total Number of Spikes in Histograms")
-
-%% Plot same heatmap as above but with dynamical threshold trace included for the noiseless case
-
-% Kicking params
-P.kickDensity = 5; % How many kicks to have per milisecond.
-% Evenly spaced kick times of P.kickDensity density. Note kickTimes can't
-% start at 0 because I get an indexing by 0 error later. Also note I don't
-% kick all the way until the end of the simulation because at the very end
-% it requires large kick amplitudes in order to get spikes to occur before
-% the simulation ends.
-P.kickTimes = linspace(P.dt, (P.simLength - 0.5), P.kickDensity*((P.simLength - 0.5) - P.dt));
-P.kickIncrement = 0.1; % Size to increase kick amplitude each iteration.
-
-checkSimSpike(P); % checks that baseline simulation doesn't spike.
-DT = getDynThr(P); % run dynamical threshold simulations.
-
-% Plot
-figure;
-hold on;
-im = imagesc(counts_mat);
-cb = colorbar;
-cb.Label.String = "Number of Spikes";
-switch P.input_type
-    case 'tent'
-        title(sprintf("Spike Count Image tent input \n A = %d, beta = %d, IS = %d", P.A, P.beta, P.inputShift))
-    case 'rectsin'
-        title(sprintf("Spike Count Image rectsin input \n width = %d, beta = %d, IS = %d", P.sin_width, P.beta, P.inputShift))
-end
-xlabel("Time (ms)")
-ylabel("Sigma")
-axis image;
-ax = gca;
-ax.YTickLabel = linspace(min(sigma_range), max(sigma_range), numel(ax.YTick)+1);
-ax.XTickLabel = round(linspace(0, max(hist_edges), numel(ax.XTick)+1), 2);
+% ax.XTickLabel = round(linspace(0, max(hist_edges), numel(ax.XTick)+1), 2);
 
 plot(P.tarray.*(size(counts_mat,2)/max(P.tarray)), NS.input_noNoise.*(size(counts_mat,1)/max(NS.input_noNoise)), "color", 'k')
 plot(P.kickTimes.*(size(counts_mat,2)/max(P.kickTimes)), DT.kickSizes.*(size(counts_mat,1)/max(DT.kickSizes)), "color",'r') % plot dynamical threshold
